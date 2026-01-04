@@ -1,6 +1,7 @@
 #pragma once
 
-#include <cstdint>
+
+#include <stdint.h>
 #include <sys/types.h>
 
 #define GRID_SIZE 4

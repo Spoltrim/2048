@@ -2,6 +2,6 @@
 #include "headers/input_manager.h"
 
 int main(int argc, char* argv[]) {
-    input_loop();
+    //input_loop();
     return EXIT_SUCCESS;
 }
