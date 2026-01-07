@@ -4,12 +4,13 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 game_infos_t game_info;
+int fd_pipe_affichage[2];
 
 void game_process() {
 
-    int fd_pipe_affichage[2];
     pipe(fd_pipe_affichage);
 
     int fork_res = fork();
@@ -25,7 +26,8 @@ void game_process() {
         for (size_t i = 0; i<GRID_SIZE; i++) 
             for (size_t j = 0; i<GRID_SIZE; i++) 
                 game_info.grid[i][j] = 0;
-        game_info.score = 0;
+        game_info.grid[1][1] = 2;
+        game_info.score = 2;
         game_info.game_state = STATE_NOT_FINISHED;
 
 
@@ -38,8 +40,7 @@ void game_process() {
     { // FILS (display)
         close(fd_pipe_affichage[1]); // Ferme l'écriture
 
-
-        close(fd_pipe_affichage[0]);
+        display_loop(fd_pipe_affichage[0]);
     }
 }
 
@@ -71,13 +72,25 @@ void* move_and_score_loop(void* arg) {
 }
 
 void move_and_score_handler(int sig) {
-    game_info.score++;
-    display_game(&game_info);
+    game_info.grid[1][1] *=2;
+    game_info.score*=2;
+    kill(getpid(),SIGUSR2);
 }
 
 
 
 void* goal_loop(void* arg) {
     game_infos_t* game_info = (game_infos_t*)arg;
+    struct sigaction sa;
+    sa.sa_handler = goal_handler;
+    sigaction(SIGUSR2, &sa, NULL);
+    goal_handler(0); // Premier affichage
     return NULL;
+}
+
+void goal_handler(int sig) {
+    if (game_info.game_state == STATE_LOSE) {
+        kill(getpid(),SIGINT);
+    }
+    write(fd_pipe_affichage[1],&game_info,sizeof(game_infos_t));
 }

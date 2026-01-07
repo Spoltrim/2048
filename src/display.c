@@ -1,5 +1,15 @@
 #include <stdio.h>
 #include "../headers/display.h"
+#include <unistd.h>
+
+void display_loop(int fd_lecture) {
+    while(1) {
+        game_infos_t game_info;
+        read(fd_lecture,&game_info,sizeof(game_infos_t));
+        display_game(&game_info);
+    }
+    close(fd_lecture);
+}
 
 void display_game(const game_infos_t *infos)
 {
