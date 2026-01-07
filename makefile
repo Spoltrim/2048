@@ -1,5 +1,4 @@
 main: init build/input_manager build/display
-	mkdir bin
 	gcc -o bin/main main.c build/input_manager.o build/display.o
 
 
