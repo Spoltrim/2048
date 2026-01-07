@@ -1,14 +1,29 @@
+#include <signal.h>
 #include <stdio.h>
 #include "../headers/display.h"
 #include <unistd.h>
 
+int fd;
+
+void clean_display_ending(int sig) {
+    close(fd);
+    printf("Terminaison propre display\n");
+    exit(EXIT_SUCCESS);
+}
+
 void display_loop(int fd_lecture) {
+    fd = fd_lecture;
+
+    struct sigaction sa;
+    sa.sa_handler = clean_display_ending;
+    sigaction(SIGTERM, &sa, NULL);
+
     while(1) {
         game_infos_t game_info;
-        read(fd_lecture,&game_info,sizeof(game_infos_t));
+        read(fd,&game_info,sizeof(game_infos_t));
         display_game(&game_info);
     }
-    close(fd_lecture);
+    clean_display_ending(0);
 }
 
 void display_game(const game_infos_t *infos)
