@@ -1,16 +1,29 @@
-main: init build/input_manager build/display
-	gcc -o bin/main main.c build/input_manager.o build/display.o
+TARGET_EXEC = main
 
+BUILD_DIR = build
+TARGET_DIR = bin
+SRC_DIR = src
+H_DIR = headers
 
-init:
-	mkdir bin build
+CC = gcc
 
-build/input_manager:
-	gcc -c src/input_manager.c -o build/input_manager.o
+# Sources
+SRCS := main.c $(shell find $(SRC_DIR) -name "*.c")
 
-build/display:
-	gcc -c src/display.c -o build/display.o
+# src/truc.c -> build/truc.o
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
+CFLAGS = -Wall -Wextra -Werror
+
+# Compilation de l'executable
+$(TARGET_DIR)/$(TARGET_EXEC): $(OBJS)
+	mkdir -p $(TARGET_DIR)
+	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+
+# Règle de compilation pour .o
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -R bin build
+	rm -rf $(BUILD_DIR) $(TARGET_DIR)
