@@ -9,7 +9,8 @@ int main(int argc, char* argv[]) {
     
     mkfifo("2048_fifo",S_IWUSR | S_IRUSR); // Créé la fifo
 
-    if (fork() > 0) 
+    int fork_res = fork();
+    if (fork_res > 0) 
     { // PERE
         input_loop();
     }
@@ -25,6 +26,8 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+        close(fd);
+        printf("Bonne terminaison lecteur\n");
     }
 
 
