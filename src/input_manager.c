@@ -1,4 +1,6 @@
 #include "../headers/input_manager.h"
+#include <fcntl.h>
+#include <sys/stat.h>
 
 static struct termios old_termios;
 
@@ -15,8 +17,9 @@ void input_loop() {
     new_termios.c_lflag &= ~(ICANON | ECHO);
     tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
 
-    fd = open("/tmp/2048_fifo", O_WRONLY);
-
+    mkfifo("2048_fifo.txt",S_IWUSR | S_IRUSR);
+    fd = open("2048_fifo.txt", O_WRONLY);
+    
     while (1) {
         c = getchar();
 
