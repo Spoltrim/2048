@@ -1,8 +1,9 @@
 #include "../headers/input_manager.h"
 #include <fcntl.h>
+#include <stdio.h>
 #include <sys/stat.h>
 
-static struct termios old_termios;
+static struct termios old_termios; // Conserve l'état du terminal pour le restaurer à la fin
 
 void input_loop() {
     int fd;
@@ -11,22 +12,22 @@ void input_loop() {
 
     struct termios new_termios;
 
-    tcgetattr(STDIN_FILENO, &old_termios);
+    tcgetattr(STDIN_FILENO, &old_termios); // Garde l'état du terminal actuel comme base
     new_termios = old_termios;
 
-    new_termios.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
+    new_termios.c_lflag &= ~(ICANON | ECHO); // Désactive la lecture char par char et n'affiche pas les touches tapées
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_termios); // Applique les modifs
 
-    mkfifo("2048_fifo.txt",S_IWUSR | S_IRUSR);
-    fd = open("2048_fifo.txt", O_WRONLY);
+    fd = open("2048_fifo", O_WRONLY); // Ouvre la fifo en écriture
     
     while (1) {
         c = getchar();
 
         if (c == 27) { // ESC
-            char seq1 = getchar();
+            char seq1 = getchar(); 
             char seq2 = getchar();
 
+            // Une flèche correspond à [A ou [B etc
             if (seq1 == '[') {
                 switch (seq2) {
                     case 'A': cmd = CMD_UP; break;
@@ -49,7 +50,7 @@ void input_loop() {
         write(fd, &cmd, sizeof(command_t));
 
         if (cmd == CMD_QUIT)
-            break;
+            printf("Il veut quitter\n");
     }
 
     close(fd);
