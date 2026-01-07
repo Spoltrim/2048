@@ -1,8 +1,5 @@
-#include "headers/commands.h"
-#include "stdlib.h"
 #include "headers/input_manager.h"
-#include <fcntl.h>
-#include <stdio.h>
+#include "headers/game_process.h"
 #include <sys/stat.h>
 
 int main(int argc, char* argv[]) {
@@ -16,21 +13,8 @@ int main(int argc, char* argv[]) {
     }
     else 
     { // FILS 
-        // TEST POUR LIRE LES COMMANDES (à remplacer par le lancement de la logique)
-        int fd = open("2048_fifo", O_RDONLY);
-        while(1) {
-            command_t cmd;
-            read(fd,&cmd,sizeof(command_t));
-            printf("%u\n",cmd);
-            if ( cmd == CMD_QUIT) {
-                break;
-            }
-        }
-        close(fd);
-        printf("Bonne terminaison lecteur\n");
+        game_process();
     }
-
-
 
     return EXIT_SUCCESS;
 }

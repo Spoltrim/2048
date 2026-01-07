@@ -13,7 +13,7 @@ SRCS := main.c $(shell find $(SRC_DIR) -name "*.c")
 # src/truc.c -> build/truc.o
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -Wall -Wextra
 
 # Compilation de l'executable
 $(TARGET_DIR)/$(TARGET_EXEC): $(OBJS)
