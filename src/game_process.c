@@ -36,6 +36,7 @@ void game_process() {
         struct sigaction sa;
         sa.sa_handler = stop_handler;
         sigaction(SIGTERM, &sa, NULL);
+        sigaction(SIGINT, &sa, NULL);
 
 
         pthread_create(&t_move, NULL, move_and_score_loop, &game_info);
@@ -120,6 +121,7 @@ void stop_handler(int sig) {
     close(fd_cmd);
     close(fd_pipe_affichage[1]);
 
+    kill(getppid(),SIGINT);
     kill(fork_res,SIGTERM);
     printf("Terminaison propre game process\n");
     exit(EXIT_SUCCESS);
