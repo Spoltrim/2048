@@ -1,4 +1,5 @@
 #include "../headers/game_process.h"
+#include <bits/types/sigset_t.h>
 #include <signal.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -42,33 +43,54 @@ void game_process()
         pthread_create(&t_move, NULL, move_and_score_loop, &game_info);
         pthread_create(&t_goal, NULL, goal_loop, &game_info);
 
-        main_loop(&last_cmd);
+        //main_loop(&last_cmd);
+
+        pthread_t t_main;
+        pthread_create(&t_main,NULL, main_loop,&last_cmd);
     }
     else
-    {                                // FILS (display)
+    {  // FILS (display)
         close(fd_pipe_affichage[1]); // Ferme l'écriture
 
         display_loop(fd_pipe_affichage[0]);
     }
 }
 
-void main_loop(command_t *last_cmd)
+void* main_loop(void* arg)
 {
+    command_t* last_cmd = (command_t*)arg;
+
     fd_cmd = open("2048_fifo", O_RDONLY);
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR1);
+    sigaddset(&set, SIGUSR2);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
+    
     while (1)
     {
-        read(fd_cmd, last_cmd, sizeof(command_t)); // Récupère la cmd envoyée par input_manager
-        kill(getpid(), SIGUSR1);                   // Notifie move_and_score
+        int r = read(fd_cmd, last_cmd, sizeof(command_t)); // Récupère la cmd envoyée par input_manager
+        printf("Testtt %d\n",r);
+        if (r < 0) {
+            break;
+        }
+        kill(getpid(), SIGUSR1); // Notifie move_and_score
         if (*last_cmd == CMD_QUIT)
         {
             break;
         }
     }
     stop_handler(0);
+    return NULL;
 }
 
 void *move_and_score_loop(void *arg)
 {
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR2);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
+
     game_infos_t *game_info = (game_infos_t *)arg;
     struct sigaction sa;
     sa.sa_handler = move_and_score_handler;
@@ -109,6 +131,11 @@ void move_and_score_handler(int sig)
 
 void *goal_loop(void *arg)
 {
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR1);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
+
     game_infos_t *game_info = (game_infos_t *)arg;
     struct sigaction sa;
     sa.sa_handler = goal_handler;
