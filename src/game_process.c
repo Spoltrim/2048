@@ -13,6 +13,8 @@ game_infos_t game_info;
 int fd_cmd;
 int fd_pipe_affichage[2];
 int fork_res;
+command_t last_cmd;
+pthread_t t_move, t_goal;
 
 void game_process()
 {
@@ -24,9 +26,6 @@ void game_process()
     { // PERE (game_process)
 
         close(fd_pipe_affichage[0]); // Ferme la lecture
-
-        pthread_t t_move, t_goal;
-        command_t last_cmd;
 
         // == INIT de game_info ==
         for (size_t i = 0; i < GRID_SIZE; i++)
@@ -43,22 +42,22 @@ void game_process()
         pthread_create(&t_move, NULL, move_and_score_loop, &game_info);
         pthread_create(&t_goal, NULL, goal_loop, &game_info);
 
-        //main_loop(&last_cmd);
+        main_loop(&last_cmd);
 
         pthread_t t_main;
-        pthread_create(&t_main,NULL, main_loop,&last_cmd);
+        pthread_create(&t_main, NULL, main_loop, &last_cmd);
     }
     else
-    {  // FILS (display)
+    {                                // FILS (display)
         close(fd_pipe_affichage[1]); // Ferme l'écriture
 
         display_loop(fd_pipe_affichage[0]);
     }
 }
 
-void* main_loop(void* arg)
+void *main_loop(void *arg)
 {
-    command_t* last_cmd = (command_t*)arg;
+    command_t *last_cmd = (command_t *)arg;
 
     fd_cmd = open("2048_fifo", O_RDONLY);
     sigset_t set;
@@ -66,15 +65,16 @@ void* main_loop(void* arg)
     sigaddset(&set, SIGUSR1);
     sigaddset(&set, SIGUSR2);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
-    
+
     while (1)
     {
         int r = read(fd_cmd, last_cmd, sizeof(command_t)); // Récupère la cmd envoyée par input_manager
-        printf("Testtt %d\n",r);
-        if (r < 0) {
+        printf("Testtt %d\n", r);
+        if (r < 0)
+        {
             break;
         }
-        kill(getpid(), SIGUSR1); // Notifie move_and_score
+        pthread_kill(t_move, SIGUSR1); // Notifie move_and_score
         if (*last_cmd == CMD_QUIT)
         {
             break;
@@ -86,20 +86,27 @@ void* main_loop(void* arg)
 
 void *move_and_score_loop(void *arg)
 {
+    printf("debut move_and_score_loop\n");
     sigset_t set;
     sigemptyset(&set);
-    sigaddset(&set, SIGUSR2);
+    sigaddset(&set, SIGUSR2); // Bloque uniquement SIGUSR2
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 
     game_infos_t *game_info = (game_infos_t *)arg;
     struct sigaction sa;
     sa.sa_handler = move_and_score_handler;
-    sigaction(SIGUSR1, &sa, NULL);
+    if (sigaction(SIGUSR1, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
+    printf("Signal handler for SIGUSR1 registered\n");
     return NULL;
 }
 
 void move_and_score_handler(int sig)
 {
+    printf("Move and score handler called\n");
     bool moved = false;
     command_t last_cmd;
     switch (last_cmd)
@@ -225,29 +232,29 @@ static bool merge_col_up(int grid[4][4], int col, int *score)
 bool move_up(game_infos_t *g)
 {
     bool moved = false;
-
-    for (int col = 0; col < GRID_SIZE; col++)
-    {
-
-        int before[4];
-        for (int i = 0; i < 4; i++)
-            before[i] = g->grid[i][col];
-
-        compress_col_up(g->grid, col);
-        if (merge_col_up(g->grid, col, &g->score))
-            moved = true;
-        compress_col_up(g->grid, col);
-
-        for (int i = 0; i < 4; i++)
+    /*
+        for (int col = 0; col < GRID_SIZE; col++)
         {
-            if (before[i] != g->grid[i][col])
-            {
+
+            int before[4];
+            for (int i = 0; i < 4; i++)
+                before[i] = g->grid[i][col];
+
+            compress_col_up(g->grid, col);
+            if (merge_col_up(g->grid, col, &g->score))
                 moved = true;
-                break;
+            compress_col_up(g->grid, col);
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (before[i] != g->grid[i][col])
+                {
+                    moved = true;
+                    break;
+                }
             }
         }
-    }
-
+        */
     return moved;
 }
 
