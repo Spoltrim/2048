@@ -32,7 +32,7 @@ void display_loop(int fd_lecture)
 void display_game(const game_infos_t *infos)
 {
     // ctrl L pour afficher seuleument une grille
-    printf("\033[2J\033[H");
+    //printf("\033[2J\033[H");
 
     // affichage du jeu
     printf("====== 2048 ======\n\n");

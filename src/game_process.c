@@ -1,5 +1,7 @@
 #include "../headers/game_process.h"
+#include <bits/pthreadtypes.h>
 #include <bits/types/sigset_t.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -15,6 +17,8 @@ int fd_pipe_affichage[2];
 int fork_res;
 command_t last_cmd;
 pthread_t t_move, t_goal;
+
+pthread_mutex_t mutex;
 
 void game_process()
 {
@@ -60,11 +64,13 @@ void *main_loop(void *arg)
     command_t *last_cmd = (command_t *)arg;
 
     fd_cmd = open("2048_fifo", O_RDONLY);
+    
     sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIGUSR1);
     sigaddset(&set, SIGUSR2);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
+    
 
     while (1)
     {
@@ -101,6 +107,9 @@ void *move_and_score_loop(void *arg)
         exit(EXIT_FAILURE);
     }
     printf("Signal handler for SIGUSR1 registered\n");
+    while(1) {
+        pause();
+    }
     return NULL;
 }
 
@@ -108,51 +117,63 @@ void move_and_score_handler(int sig)
 {
     printf("Move and score handler called\n");
     bool moved = false;
-    command_t last_cmd;
+
+    pthread_mutex_lock(&mutex);
+
     switch (last_cmd)
     {
-    case CMD_UP:
-        printf("Move UP\n");
-        moved = move_up(&game_info);
-        break;
-    case CMD_DOWN:
-        moved = move_down(&game_info);
-        break;
-    case CMD_LEFT:
-        moved = move_left(&game_info);
-        break;
-    case CMD_RIGHT:
-        moved = move_right(&game_info);
-        break;
-    default:
-        return;
+        case CMD_UP:
+            printf("Move UP\n");
+            moved = move_up(&game_info);
+            break;
+        case CMD_DOWN:
+            moved = move_down(&game_info);
+            break;
+        case CMD_LEFT:
+            moved = move_left(&game_info);
+            break;
+        case CMD_RIGHT:
+            moved = move_right(&game_info);
+            break;
+        default:
+            return;
     }
 
     if (moved)
     {
         add_random_tile(&game_info);
     }
+    pthread_mutex_unlock(&mutex);
 
     kill(getpid(), SIGUSR2); // notif affichage + victoire
 }
 
 void *goal_loop(void *arg)
 {
+    /*
     sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIGUSR1);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
+    */
 
     game_infos_t *game_info = (game_infos_t *)arg;
     struct sigaction sa;
     sa.sa_handler = goal_handler;
     sigaction(SIGUSR2, &sa, NULL);
     goal_handler(0); // Premier affichage
+    while(1) {
+        pause();
+    }
     return NULL;
 }
 
 void goal_handler(int sig)
 {
+    printf("Goal handler\n");
+    pthread_mutex_lock(&mutex);
+
+
     bool complet = true;
     for (int i = 0; i < GRID_SIZE; i++)
     {
@@ -175,10 +196,11 @@ void goal_handler(int sig)
     }
 
     write(fd_pipe_affichage[1], &game_info, sizeof(game_infos_t));
+    
+    pthread_mutex_unlock(&mutex);
 
     if (game_info.game_state != STATE_NOT_FINISHED)
     {
-        sleep(1);
         kill(getpid(), SIGTERM);
     }
 }
@@ -193,291 +215,3 @@ void stop_handler(int sig)
     exit(EXIT_SUCCESS);
 }
 
-static void compress_col_up(int grid[4][4], int col)
-{
-    int tmp[4] = {0};
-    int k = 0;
-
-    for (int i = 0; i < 4; i++)
-    {
-        if (grid[i][col] != 0)
-        {
-            tmp[k++] = grid[i][col];
-        }
-    }
-
-    for (int i = 0; i < 4; i++)
-    {
-        grid[i][col] = tmp[i];
-    }
-}
-
-static bool merge_col_up(int grid[4][4], int col, int *score)
-{
-    bool merged = false;
-
-    for (int i = 0; i < 3; i++)
-    {
-        if (grid[i][col] != 0 && grid[i][col] == grid[i + 1][col])
-        {
-            grid[i][col] *= 2;
-            *score += grid[i][col];
-            grid[i + 1][col] = 0;
-            merged = true;
-        }
-    }
-    return merged;
-}
-
-bool move_up(game_infos_t *g)
-{
-    bool moved = false;
-    /*
-        for (int col = 0; col < GRID_SIZE; col++)
-        {
-
-            int before[4];
-            for (int i = 0; i < 4; i++)
-                before[i] = g->grid[i][col];
-
-            compress_col_up(g->grid, col);
-            if (merge_col_up(g->grid, col, &g->score))
-                moved = true;
-            compress_col_up(g->grid, col);
-
-            for (int i = 0; i < 4; i++)
-            {
-                if (before[i] != g->grid[i][col])
-                {
-                    moved = true;
-                    break;
-                }
-            }
-        }
-        */
-    return moved;
-}
-
-static void compress_col_down(int grid[4][4], int col)
-{
-    int tmp[4] = {0};
-    int k = 3;
-
-    for (int i = 3; i >= 0; i--)
-    {
-        if (grid[i][col] != 0)
-        {
-            tmp[k--] = grid[i][col];
-        }
-    }
-
-    for (int i = 0; i < 4; i++)
-    {
-        grid[i][col] = tmp[i];
-    }
-}
-
-static bool merge_col_down(int grid[4][4], int col, int *score)
-{
-    bool merged = false;
-
-    for (int i = 3; i > 0; i--)
-    {
-        if (grid[i][col] != 0 && grid[i][col] == grid[i - 1][col])
-        {
-            grid[i][col] *= 2;
-            *score += grid[i][col];
-            grid[i - 1][col] = 0;
-            merged = true;
-        }
-    }
-    return merged;
-}
-
-bool move_down(game_infos_t *g)
-{
-    bool moved = false;
-
-    for (int col = 0; col < GRID_SIZE; col++)
-    {
-
-        int before[4];
-        for (int i = 0; i < 4; i++)
-            before[i] = g->grid[i][col];
-
-        compress_col_down(g->grid, col);
-        if (merge_col_down(g->grid, col, &g->score))
-            moved = true;
-        compress_col_down(g->grid, col);
-
-        for (int i = 0; i < 4; i++)
-        {
-            if (before[i] != g->grid[i][col])
-            {
-                moved = true;
-                break;
-            }
-        }
-    }
-
-    return moved;
-}
-
-static void compress_row_left(int row[4])
-{
-    int tmp[4] = {0};
-    int k = 0;
-
-    for (int i = 0; i < 4; i++)
-    {
-        if (row[i] != 0)
-        {
-            tmp[k++] = row[i];
-        }
-    }
-
-    for (int i = 0; i < 4; i++)
-    {
-        row[i] = tmp[i];
-    }
-}
-
-static bool merge_row_left(int row[4], int *score)
-{
-    bool merged = false;
-
-    for (int i = 0; i < 3; i++)
-    {
-        if (row[i] != 0 && row[i] == row[i + 1])
-        {
-            row[i] *= 2;
-            *score += row[i];
-            row[i + 1] = 0;
-            merged = true;
-        }
-    }
-
-    return merged;
-}
-
-bool move_left(game_infos_t *g)
-{
-    bool moved = false;
-
-    for (int i = 0; i < GRID_SIZE; i++)
-    {
-
-        int before[4];
-        for (int j = 0; j < 4; j++)
-            before[j] = g->grid[i][j];
-
-        compress_row_left(g->grid[i]);
-        if (merge_row_left(g->grid[i], &g->score))
-            moved = true;
-        compress_row_left(g->grid[i]);
-
-        for (int j = 0; j < 4; j++)
-        {
-            if (before[j] != g->grid[i][j])
-            {
-                moved = true;
-                break;
-            }
-        }
-    }
-
-    return moved;
-}
-
-static void compress_row_right(int row[4])
-{
-    int tmp[4] = {0};
-    int k = 3;
-
-    for (int i = 3; i >= 0; i--)
-    {
-        if (row[i] != 0)
-        {
-            tmp[k--] = row[i];
-        }
-    }
-
-    for (int i = 0; i < 4; i++)
-    {
-        row[i] = tmp[i];
-    }
-}
-
-static bool merge_row_right(int row[4], int *score)
-{
-    bool merged = false;
-
-    for (int i = 3; i > 0; i--)
-    {
-        if (row[i] != 0 && row[i] == row[i - 1])
-        {
-            row[i] *= 2;
-            *score += row[i];
-            row[i - 1] = 0;
-            merged = true;
-        }
-    }
-
-    return merged;
-}
-
-bool move_right(game_infos_t *g)
-{
-    bool moved = false;
-
-    for (int i = 0; i < GRID_SIZE; i++)
-    {
-
-        int before[4];
-        for (int j = 0; j < 4; j++)
-            before[j] = g->grid[i][j];
-
-        compress_row_right(g->grid[i]);
-        if (merge_row_right(g->grid[i], &g->score))
-            moved = true;
-        compress_row_right(g->grid[i]);
-
-        for (int j = 0; j < 4; j++)
-        {
-            if (before[j] != g->grid[i][j])
-            {
-                moved = true;
-                break;
-            }
-        }
-    }
-
-    return moved;
-}
-
-void add_random_tile(game_infos_t *g)
-{
-    int empty[GRID_SIZE * GRID_SIZE][2];
-    int count = 0;
-
-    for (int i = 0; i < GRID_SIZE; i++)
-    {
-        for (int j = 0; j < GRID_SIZE; j++)
-        {
-            if (g->grid[i][j] == 0)
-            {
-                empty[count][0] = i;
-                empty[count][1] = j;
-                count++;
-            }
-        }
-    }
-
-    if (count == 0)
-        return;
-
-    int r = rand() % count;
-    int value = (rand() % 10 == 0) ? 4 : 2;
-
-    g->grid[empty[r][0]][empty[r][1]] = value;
-}
