@@ -20,10 +20,14 @@ void display_loop(int fd_lecture)
     sa.sa_handler = clean_display_ending;
     sigaction(SIGTERM, &sa, NULL);
 
+    game_infos_t game_info;
     while (1)
     {
-        game_infos_t game_info;
-        read(fd, &game_info, sizeof(game_infos_t));
+        ssize_t r = read(fd, &game_info, sizeof(game_infos_t));
+        if (r <= 0) {
+            perror("read display");
+            break;
+        }
         display_game(&game_info);
     }
     clean_display_ending(0);
