@@ -6,28 +6,27 @@
 
 static struct termios old_termios; // Conserve l'état du terminal pour le restaurer à la fin
 
-int fd_write_fifo;
+int fd_write_fifo; // FD de la fifo en écriture vers game_process
 
 void clean_ending()
 {
     printf("Terminaison propre input_manager\n");
     close(fd_write_fifo);
-    tcsetattr(STDIN_FILENO, TCSANOW, &old_termios); // Restauration terminal
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_termios); // Restauration du terminal
     exit(EXIT_FAILURE);
 }
 
 void input_loop()
 {
-    char c;
-    command_t cmd;
-    struct termios new_termios;
-    struct sigaction sa;
-
     // == Redéfinition du Ctrl C ==
+    struct sigaction sa;
     sa.sa_handler = clean_ending;
     sigaction(SIGINT, &sa, NULL);
 
     // == Configuration du terminal ==
+    // Par défaut, le terminal récupère stdin caractères par caractères
+    // Ici, on peut récupérer plusieurs caractères en un (ex : < ESC[A > pour la flèche du haut )
+    struct termios new_termios; // Pour configurer le nouveau terminal
     tcgetattr(STDIN_FILENO, &old_termios); // Garde l'état du terminal actuel comme base
     new_termios = old_termios;
 
@@ -37,14 +36,17 @@ void input_loop()
     // Ouvre la fifo en écriture
     fd_write_fifo = open("2048_fifo", O_WRONLY);
 
+    char c;
+    command_t cmd;
+
     while (1)
     {
-        c = getchar();
+        c = getchar(); // Récupère le 1er caractère de l'entrée ( devrait être ESC )
 
-        if (c == 27)
-        { // ESC
-            char c1 = getchar();
-            char c2 = getchar();
+        if (c == 27) // Si c'est ESC
+        {
+            char c1 = getchar(); // Récup le 2e ( devrait être [ )
+            char c2 = getchar(); // Récup le 3e ( devrait être A à D )
 
             // Une flèche correspond à [A ou [B etc
             if (c1 == '[')
@@ -72,7 +74,7 @@ void input_loop()
                 continue;
             }
         }
-        else if (c == 'q')
+        else if (c == 'q') // Si le caractère était juste 'q', on envoie la cmd pour quitter
         {
             cmd = CMD_QUIT;
         }
@@ -82,11 +84,11 @@ void input_loop()
             continue;
         }
 
+        // Envoie la commande par fifo à game_process
         write(fd_write_fifo, &cmd, sizeof(command_t));
 
-        if (cmd == CMD_QUIT)
+        
+        if (cmd == CMD_QUIT) 
             clean_ending();
     }
-
-    clean_ending();
 }

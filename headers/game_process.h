@@ -4,8 +4,13 @@
 #include "display.h"
 #include "game_logic.h"
 
-#include <unistd.h>
+#include <bits/pthreadtypes.h>
 #include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <stdbool.h>
 
 void game_process();
