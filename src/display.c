@@ -25,7 +25,7 @@ void display_loop(int fd_lecture)
     {
         ssize_t r = read(fd, &game_info, sizeof(game_infos_t));
         if (r <= 0) {
-            perror("read display");
+            fprintf(stderr,"read display\n");
             break;
         }
         display_game(&game_info);
@@ -68,10 +68,10 @@ void display_game(const game_infos_t *infos)
         printf("Partie en cours...\n");
         break;
     case STATE_WIN:
-        printf("🎉 Victoire! Vous avez atteint 2048 !\n");
+        printf("Victoire! Vous avez atteint 2048 !\n");
         break;
     case STATE_LOSE:
-        printf("💀 Défaite! Aucun coup possible.\n");
+        printf("Défaite! Aucun coup possible.\n");
         break;
     }
     printf("Appuyer sur Q pour quitter.\n");

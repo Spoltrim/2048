@@ -80,7 +80,6 @@ void *main_loop(void *arg)
         int r = read(fd_cmd, &buffer, sizeof(command_t)); // Récupère la cmd envoyée par input_manager
         pthread_mutex_lock(&mutex_last_cmd);
         *last_cmd = buffer;
-        printf("Testtt %d\n", r);
         if (r < 0)
         {
             break;
@@ -98,14 +97,6 @@ void *main_loop(void *arg)
 
 void *move_and_score_loop(void *arg)
 {
-    printf("debut move_and_score_loop\n");
-    /*
-    sigset_t set;
-    sigemptyset(&set);
-    sigaddset(&set, SIGUSR2); // Bloque uniquement SIGUSR2
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
-    */
-
     game_infos_t *game_info = (game_infos_t *)arg;
     struct sigaction sa;
     sa.sa_handler = move_and_score_handler;
@@ -114,14 +105,12 @@ void *move_and_score_loop(void *arg)
         perror("sigaction");
         exit(EXIT_FAILURE);
     }
-    printf("Signal handler for SIGUSR1 registered\n");
     while(1) {
         if (!atomic_move) {
             continue;
             usleep(1000);
         }
 
-        printf("Move and score handler called\n");
         bool moved = false;
 
         pthread_mutex_lock(&mutex_game_info);
@@ -130,7 +119,6 @@ void *move_and_score_loop(void *arg)
         switch (last_cmd)
         {
             case CMD_UP:
-                printf("Move UP\n");
                 moved = move_up(game_info);
                 break;
             case CMD_DOWN:
@@ -169,13 +157,6 @@ void move_and_score_handler(int sig)
 
 void *goal_loop(void *arg)
 {
-    /*
-    sigset_t set;
-    sigemptyset(&set);
-    sigaddset(&set, SIGUSR1);
-    pthread_sigmask(SIG_BLOCK, &set, NULL);
-    */
-
     game_infos_t *game_info = (game_infos_t *)arg;
     struct sigaction sa;
     sa.sa_handler = goal_handler;
@@ -187,7 +168,6 @@ void *goal_loop(void *arg)
             usleep(1000);
         }
 
-        printf("Goal handler\n");
         pthread_mutex_lock(&mutex_game_info);
 
 

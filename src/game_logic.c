@@ -1,6 +1,7 @@
 #include "../headers/game_logic.h"
+#include <stdint.h>
 
-static void compress_col_up(int grid[4][4], int col)
+static void compress_col_up(uint16_t grid[4][4], int col)
 {
     int tmp[4] = {0};
     int k = 0;
@@ -19,7 +20,7 @@ static void compress_col_up(int grid[4][4], int col)
     }
 }
 
-static bool merge_col_up(int grid[4][4], int col, int *score)
+static bool merge_col_up(uint16_t grid[4][4], int col, uint32_t *score)
 {
     bool merged = false;
 
@@ -65,7 +66,7 @@ bool move_up(game_infos_t *g)
     return moved;
 }
 
-static void compress_col_down(int grid[4][4], int col)
+static void compress_col_down(uint16_t grid[4][4], int col)
 {
     int tmp[4] = {0};
     int k = 3;
@@ -84,7 +85,7 @@ static void compress_col_down(int grid[4][4], int col)
     }
 }
 
-static bool merge_col_down(int grid[4][4], int col, int *score)
+static bool merge_col_down(uint16_t grid[4][4], int col, uint32_t *score)
 {
     bool merged = false;
 
@@ -130,7 +131,7 @@ bool move_down(game_infos_t *g)
     return moved;
 }
 
-static void compress_row_left(int row[4])
+static void compress_row_left(uint16_t row[4])
 {
     int tmp[4] = {0};
     int k = 0;
@@ -149,7 +150,7 @@ static void compress_row_left(int row[4])
     }
 }
 
-static bool merge_row_left(int row[4], int *score)
+static bool merge_row_left(uint16_t row[4], uint32_t *score)
 {
     bool merged = false;
 
@@ -196,7 +197,7 @@ bool move_left(game_infos_t *g)
     return moved;
 }
 
-static void compress_row_right(int row[4])
+static void compress_row_right(uint16_t row[4])
 {
     int tmp[4] = {0};
     int k = 3;
@@ -215,7 +216,7 @@ static void compress_row_right(int row[4])
     }
 }
 
-static bool merge_row_right(int row[4], int *score)
+static bool merge_row_right(uint16_t row[4], uint32_t *score)
 {
     bool merged = false;
 
