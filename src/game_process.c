@@ -150,6 +150,7 @@ void *move_and_score_loop(void *arg)
 
 void move_and_score_handler(int sig)
 {
+    (void)sig; // Enleve le unsused warning
     atomic_move = 1;
 }
 
@@ -170,27 +171,7 @@ void *goal_loop(void *arg)
 
         pthread_mutex_lock(&mutex_game_info);
 
-
-        bool complet = true;
-        for (int i = 0; i < GRID_SIZE; i++)
-        {
-            for (int j = 0; j < GRID_SIZE; j++)
-            {
-                if (game_info->grid[i][j] == 0)
-                {
-                    complet = false;
-                }
-                else if (game_info->grid[i][j] >= 2048)
-                {
-                    game_info->game_state = STATE_WIN;
-                    break;
-                }
-            }
-        }
-        if (complet && game_info->game_state == STATE_NOT_FINISHED)
-        {
-            game_info->game_state = STATE_LOSE;
-        }
+        test_game_over(game_info);
 
         write(fd_pipe_affichage[1], game_info, sizeof(game_infos_t));
         
@@ -198,6 +179,7 @@ void *goal_loop(void *arg)
 
         if (game_info->game_state != STATE_NOT_FINISHED)
         {
+            usleep(1000);
             kill(getpid(), SIGTERM);
         }
 
@@ -208,6 +190,7 @@ void *goal_loop(void *arg)
 
 void goal_handler(int sig)
 {
+    (void)sig; // Enleve le unsused warning
     atomic_goal = 1;
 }
 
@@ -215,6 +198,7 @@ void goal_handler(int sig)
 
 void stop_handler(int sig)
 {
+    (void)sig; // Enleve le unsused warning
     close(fd_cmd);
     close(fd_pipe_affichage[1]);
 

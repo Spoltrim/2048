@@ -289,3 +289,29 @@ void add_random_tile(game_infos_t *g)
 
     g->grid[empty[r][0]][empty[r][1]] = value;
 }
+
+
+
+void test_game_over(game_infos_t *g)
+{
+    bool complet = true;
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
+            if (g->grid[i][j] == 0)
+            {
+                complet = false;
+            }
+            else if (g->grid[i][j] >= 2048)
+            {
+                g->game_state = STATE_WIN;
+                break;
+            }
+        }
+    }
+    if (complet && g->game_state == STATE_NOT_FINISHED)
+    {
+        g->game_state = STATE_LOSE;
+    }
+}

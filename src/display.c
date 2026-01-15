@@ -7,6 +7,7 @@ int fd;
 
 void clean_display_ending(int sig)
 {
+    (void)sig; // Enleve le unsused warning
     close(fd);
     printf("Terminaison propre display\n");
     exit(EXIT_SUCCESS);
@@ -36,7 +37,7 @@ void display_loop(int fd_lecture)
 void display_game(const game_infos_t *infos)
 {
     // ctrl L pour afficher seuleument une grille
-    //printf("\033[2J\033[H");
+    printf("\033[2J\033[H");
 
     // affichage du jeu
     printf("====== 2048 ======\n\n");
