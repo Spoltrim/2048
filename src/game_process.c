@@ -47,7 +47,7 @@ void game_process()
 
         struct sigaction sa;
         sa.sa_handler = stop_handler;
-        sigaction(SIGTERM, &sa, NULL);
+        sigaction(SIGINT, &sa, NULL);
 
         pthread_create(&t_move, NULL, move_and_score_loop, &game_info);
         pthread_create(&t_goal, NULL, goal_loop, &game_info);
@@ -180,7 +180,8 @@ void *goal_loop(void *arg)
         if (game_info->game_state != STATE_NOT_FINISHED)
         {
             usleep(1000);
-            kill(getpid(), SIGTERM);
+            kill(getpid(), SIGINT);
+            kill(getppid(),SIGINT);
         }
 
         atomic_goal = 0;
@@ -202,7 +203,7 @@ void stop_handler(int sig)
     close(fd_cmd);
     close(fd_pipe_affichage[1]);
 
-    kill(fork_res, SIGTERM);
+    kill(fork_res, SIGINT);
     printf("Terminaison propre game process\n");
     exit(EXIT_SUCCESS);
 }

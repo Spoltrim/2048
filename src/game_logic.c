@@ -1,4 +1,5 @@
 #include "../headers/game_logic.h"
+#include <string.h>
 #include <stdint.h>
 
 static void compress_col_up(uint16_t grid[4][4], int col)
@@ -292,25 +293,33 @@ void add_random_tile(game_infos_t *g)
 
 
 
+static bool can_move(game_infos_t *g)
+{
+    game_infos_t tmp;
+
+    memcpy(&tmp, g, sizeof(game_infos_t));
+
+    if (move_up(&tmp) || move_down(&tmp) || move_left(&tmp) || move_right(&tmp)) 
+        return true;
+
+    return false;
+}
+
+
+
+
 void test_game_over(game_infos_t *g)
 {
-    bool complet = true;
-    for (int i = 0; i < GRID_SIZE; i++)
-    {
-        for (int j = 0; j < GRID_SIZE; j++)
-        {
-            if (g->grid[i][j] == 0)
-            {
-                complet = false;
-            }
-            else if (g->grid[i][j] >= 2048)
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            if (g->grid[i][j] >= 2048)
             {
                 g->game_state = STATE_WIN;
                 break;
             }
         }
     }
-    if (complet && g->game_state == STATE_NOT_FINISHED)
+    if (!can_move(g) && g->game_state == STATE_NOT_FINISHED)
     {
         g->game_state = STATE_LOSE;
     }

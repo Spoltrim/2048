@@ -19,7 +19,7 @@ void display_loop(int fd_lecture)
 
     struct sigaction sa;
     sa.sa_handler = clean_display_ending;
-    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGINT, &sa, NULL);
 
     game_infos_t game_info;
     while (1)
@@ -33,6 +33,7 @@ void display_loop(int fd_lecture)
     }
     clean_display_ending(0);
 }
+
 
 void display_game(const game_infos_t *infos)
 {
