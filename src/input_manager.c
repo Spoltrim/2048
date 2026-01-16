@@ -88,7 +88,8 @@ void input_loop()
         write(fd_write_fifo, &cmd, sizeof(command_t));
 
         
-        if (cmd == CMD_QUIT) 
+        if (cmd == CMD_QUIT) {
             clean_ending();
+        }
     }
 }
