@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "../headers/display.h"
 #include <unistd.h>
+#include <math.h>
 
 int fd; // Stocke le FD du pipe anonyme depuis le thread goal pour pouvoir le fermer depuis le handler
 
@@ -37,6 +38,31 @@ void display_loop(int fd_lecture)
 }
 
 
+static void set_bg_color_for_value(uint16_t value)
+{
+    // Transforme 2-4-8-16 en 1-2-3-4
+    double max_power = log2(2048);
+    double power = log2(value); 
+
+    // Récup un coef (0 - 1) correspondant à 2 - 2048
+    double t = (power - 1.0) / (max_power - 1.0);
+    //if (t < 0) t = 0;
+    //if (t > 1) t = 1;
+
+    int r = 255;
+    int g = (int)(220 * (1.0 - t));
+    int b = 0;
+
+    printf("\033[48;2;%d;%d;%dm", r, g, b);
+}
+
+static void reset_bg_color()
+{
+    printf("\033[0m");
+}
+
+
+
 void display_game(const game_infos_t *infos)
 {
     // ctrl L pour afficher seuleument une grille
@@ -58,7 +84,10 @@ void display_game(const game_infos_t *infos)
             }
             else
             {
-                printf("| %4u ", infos->grid[i][j]);
+                printf("|");
+                set_bg_color_for_value(infos->grid[i][j]);
+                printf(" %4u ", infos->grid[i][j]);
+                reset_bg_color();
             }
         }
         printf("|\n");

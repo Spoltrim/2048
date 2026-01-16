@@ -18,7 +18,7 @@ CFLAGS = -Wall -Wextra
 # Compilation de l'executable
 $(TARGET_DIR)/$(TARGET_EXEC): $(OBJS)
 	mkdir -p $(TARGET_DIR)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+	$(CC) $(OBJS) -o $@ -lm
 
 # Règle de compilation pour .o
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
