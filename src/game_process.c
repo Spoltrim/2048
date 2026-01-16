@@ -1,4 +1,5 @@
 #include "../headers/game_process.h"
+#include <unistd.h>
 
 game_infos_t game_info; // Infos générales de la partie, partagé par les threads de game_process
 int fd_cmd; // FD de la FIFO ouverte en écriture vers input_manager
@@ -182,6 +183,7 @@ void *goal_loop(void *arg)
         // Si la partie est finie, on envoie SIGINT à input_manager et soi même pour terminer proprement le programme
         if (game_info->game_state != STATE_NOT_FINISHED) 
         {
+            usleep(1000);
             kill(getpid(), SIGINT);
             kill(getppid(),SIGINT);
         }
