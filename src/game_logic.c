@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdint.h>
 
+// Fonction qui permet de remonter tout les nombres vers le haut dans une colonne
+// Paramètres : la grille et la colonne à compresser
 static void compress_col_up(uint16_t grid[4][4], int col)
 {
     int tmp[4] = {0};
@@ -20,7 +22,8 @@ static void compress_col_up(uint16_t grid[4][4], int col)
         grid[i][col] = tmp[i];
     }
 }
-
+// Fonction qui permet de fusionner les nombres identiques dans une colonne vers le haut
+// Paramètres : la grille, la colonne à fusionner et un pointeur vers le score
 static bool merge_col_up(uint16_t grid[4][4], int col, uint32_t *score)
 {
     bool merged = false;
@@ -37,36 +40,38 @@ static bool merge_col_up(uint16_t grid[4][4], int col, uint32_t *score)
     }
     return merged;
 }
-
+// Fonction qui effectue le mouvement vers le haut
+// Paramètres : les infos de la partie
 bool move_up(game_infos_t *g)
 {
     bool moved = false;
-    
-        for (int col = 0; col < GRID_SIZE; col++)
+
+    for (int col = 0; col < GRID_SIZE; col++)
+    {
+
+        int before[4];
+        for (int i = 0; i < 4; i++)
+            before[i] = g->grid[i][col];
+
+        compress_col_up(g->grid, col);
+        if (merge_col_up(g->grid, col, &g->score))
+            moved = true;
+        compress_col_up(g->grid, col);
+
+        for (int i = 0; i < 4; i++)
         {
-
-            int before[4];
-            for (int i = 0; i < 4; i++)
-                before[i] = g->grid[i][col];
-
-            compress_col_up(g->grid, col);
-            if (merge_col_up(g->grid, col, &g->score))
-                moved = true;
-            compress_col_up(g->grid, col);
-
-            for (int i = 0; i < 4; i++)
+            if (before[i] != g->grid[i][col])
             {
-                if (before[i] != g->grid[i][col])
-                {
-                    moved = true;
-                    break;
-                }
+                moved = true;
+                break;
             }
         }
-        
+    }
+
     return moved;
 }
-
+// Fonction qui permet de descendre tout les nombres vers le bas dans une colonne
+// Paramètres : la grille et la colonne à compresser
 static void compress_col_down(uint16_t grid[4][4], int col)
 {
     int tmp[4] = {0};
@@ -85,6 +90,8 @@ static void compress_col_down(uint16_t grid[4][4], int col)
         grid[i][col] = tmp[i];
     }
 }
+// Fonction qui permet de fusionner les nombres identiques dans une colonne vers le bas
+// Paramètres : la grille, la colonne à fusionner et un pointeur vers le score
 
 static bool merge_col_down(uint16_t grid[4][4], int col, uint32_t *score)
 {
@@ -102,7 +109,8 @@ static bool merge_col_down(uint16_t grid[4][4], int col, uint32_t *score)
     }
     return merged;
 }
-
+// Fonction qui effectue le mouvement vers le bas
+// Paramètres : les infos de la partie
 bool move_down(game_infos_t *g)
 {
     bool moved = false;
@@ -131,7 +139,8 @@ bool move_down(game_infos_t *g)
 
     return moved;
 }
-
+// Fonction qui permet de compresser une ligne vers la gauche
+// Paramètres : la ligne à compresser
 static void compress_row_left(uint16_t row[4])
 {
     int tmp[4] = {0};
@@ -150,7 +159,8 @@ static void compress_row_left(uint16_t row[4])
         row[i] = tmp[i];
     }
 }
-
+// Fonction qui permet de fusionner une ligne vers la gauche
+// Paramètres : la ligne à fusionner et un pointeur vers le score
 static bool merge_row_left(uint16_t row[4], uint32_t *score)
 {
     bool merged = false;
@@ -168,7 +178,8 @@ static bool merge_row_left(uint16_t row[4], uint32_t *score)
 
     return merged;
 }
-
+// Fonction qui effectue le mouvement vers la gauche
+// Paramètres : les infos de la partie
 bool move_left(game_infos_t *g)
 {
     bool moved = false;
@@ -198,6 +209,8 @@ bool move_left(game_infos_t *g)
     return moved;
 }
 
+// Fonction qui permet de compresser une ligne vers la droite
+// Paramètres : la ligne à compresser
 static void compress_row_right(uint16_t row[4])
 {
     int tmp[4] = {0};
@@ -217,6 +230,8 @@ static void compress_row_right(uint16_t row[4])
     }
 }
 
+// Fonction qui permet de fusionner une ligne vers la droite
+// Paramètres : la ligne à fusionner et un pointeur vers le score
 static bool merge_row_right(uint16_t row[4], uint32_t *score)
 {
     bool merged = false;
@@ -234,7 +249,8 @@ static bool merge_row_right(uint16_t row[4], uint32_t *score)
 
     return merged;
 }
-
+// Fonction qui effectue le mouvement vers la droite
+// Paramètres : les infos de la partie
 bool move_right(game_infos_t *g)
 {
     bool moved = false;
@@ -263,7 +279,8 @@ bool move_right(game_infos_t *g)
 
     return moved;
 }
-
+// Fonction qui ajoute une tuile aléatoire (2 ou 4) dans une case vide de la grille
+// Paramètres : les infos de la partie
 void add_random_tile(game_infos_t *g)
 {
     int empty[GRID_SIZE * GRID_SIZE][2];
@@ -290,28 +307,27 @@ void add_random_tile(game_infos_t *g)
 
     g->grid[empty[r][0]][empty[r][1]] = value;
 }
-
-
-
+// Fonction qui vérifie si un mouvement est possible
+// Paramètres : les infos de la partie
 static bool can_move(game_infos_t *g)
 {
     game_infos_t tmp;
 
     memcpy(&tmp, g, sizeof(game_infos_t));
 
-    if (move_up(&tmp) || move_down(&tmp) || move_left(&tmp) || move_right(&tmp)) 
+    if (move_up(&tmp) || move_down(&tmp) || move_left(&tmp) || move_right(&tmp))
         return true;
 
     return false;
 }
-
-
-
-
+// Fonction qui teste si la partie est terminée (gagnée ou perdue)
+// Paramètres : les infos de la partie
 void test_game_over(game_infos_t *g)
 {
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
+        for (int j = 0; j < GRID_SIZE; j++)
+        {
             if (g->grid[i][j] >= 2048)
             {
                 g->game_state = STATE_WIN;
