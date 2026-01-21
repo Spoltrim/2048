@@ -35,7 +35,8 @@ void game_process()
             for (size_t j = 0; j < GRID_SIZE; j++)
                 game_info.grid[i][j] = 0;
         add_random_tile(game_info);
-        game_info.score = 2;
+        add_random_tile(game_info);
+        game_info.score = 0;
         game_info.game_state = STATE_NOT_FINISHED;
 
         // == Def de la fonction d'arret du programme dès SIGINT (envoyé avec Ctrl C ou par des threads)
