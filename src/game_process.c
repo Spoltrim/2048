@@ -34,7 +34,7 @@ void game_process()
         for (size_t i = 0; i < GRID_SIZE; i++)
             for (size_t j = 0; j < GRID_SIZE; j++)
                 game_info.grid[i][j] = 0;
-        game_info.grid[1][1] = 2;
+        add_random_tile(game_info);
         game_info.score = 2;
         game_info.game_state = STATE_NOT_FINISHED;
 
